@@ -10,7 +10,7 @@ import { motion, useInView, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import {
-  Beaker, Atom, FlaskConical, Dna, Telescope,
+  Beaker, Atom, FlaskConical, Dna, Microscope,
   Zap, Flame, Waves, Wind, Leaf,
   ChevronRight, Lock, Check, Star, ArrowRight,
   Sparkles, TrendingUp
@@ -73,7 +73,7 @@ const stages = [
     color: 'from-rose-400 to-pink-500',
     bgColor: 'bg-rose-50 dark:bg-rose-950/30',
     borderColor: 'border-rose-200 dark:border-rose-800/40',
-    icon: Telescope,
+    icon: Microscope,
     topics: ['AI in Science', 'Space Exploration', 'Bioengineering', 'Climate Science', 'Original Research'],
     experiments: 10,
     xp: '5,000 XP',
@@ -86,7 +86,7 @@ const quickInfoIcons = [
   { icon: Zap, label: 'Physics' },
   { icon: Dna, label: 'Biology' },
   { icon: Atom, label: 'Quantum' },
-  { icon: Telescope, label: 'Space' },
+  { icon: Microscope, label: 'Space' },
   { icon: Leaf, label: 'Environment' },
 ];
 
