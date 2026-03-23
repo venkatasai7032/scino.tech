@@ -1,5 +1,5 @@
 
-'use client';
+'use client'; 
 
 // ============================================
 //  SCINO — Scientist Program Section
