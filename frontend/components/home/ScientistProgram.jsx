@@ -7,12 +7,12 @@
 
 import { useRef, useState } from 'react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 import {
   Beaker, Atom, FlaskConical, Dna, Microscope,
   Zap, Flame, Waves, Wind, Leaf,
-  ChevronRight, Lock, Check, Star, ArrowRight,
+  ChevronRight, Check, Star, ArrowRight,
   Sparkles, TrendingUp
 } from 'lucide-react';
 
@@ -82,17 +82,17 @@ const stages = [
 
 // ── Quick info icons ────────────────────────────
 const quickInfoIcons = [
-  { icon: Flame, label: 'Chemistry' },
-  { icon: Zap, label: 'Physics' },
-  { icon: Dna, label: 'Biology' },
-  { icon: Atom, label: 'Quantum' },
-  { icon: Microscope, label: 'Space' },
-  { icon: Leaf, label: 'Environment' },
+  { icon: Flame,      label: 'Chemistry'   },
+  { icon: Zap,        label: 'Physics'     },
+  { icon: Dna,        label: 'Biology'     },
+  { icon: Atom,       label: 'Quantum'     },
+  { icon: Microscope, label: 'Space'       },
+  { icon: Leaf,       label: 'Environment' },
 ];
 
 export default function ScientistProgram() {
   const sectionRef = useRef(null);
-  const isInView = useInView(sectionRef, { once: true, margin: '-100px' });
+  const isInView   = useInView(sectionRef, { once: true, margin: '-100px' });
   const [activeStage, setActiveStage] = useState(0);
 
   return (
@@ -103,7 +103,7 @@ export default function ScientistProgram() {
                  dark:from-dark-950 dark:via-emerald-950/10 dark:to-dark-950"
       id="scientist"
     >
-      {/* Background */}
+      {/* Background grid */}
       <div className="absolute inset-0 bg-grid opacity-40" />
 
       {/* Top glow */}
@@ -112,7 +112,8 @@ export default function ScientistProgram() {
                       rounded-full blur-[100px]" />
 
       <div className="relative z-10 section-container">
-        {/* ── Section Header ───────────────────── */}
+
+        {/* ── Section Header ─────────────────── */}
         <motion.div
           className="text-center mb-16"
           initial={{ opacity: 0, y: 30 }}
@@ -135,7 +136,7 @@ export default function ScientistProgram() {
           </p>
 
           {/* Subject icons */}
-          <div className="flex items-center justify-center gap-3 mt-8">
+          <div className="flex items-center justify-center gap-3 mt-8 flex-wrap">
             {quickInfoIcons.map((item, index) => (
               <motion.div
                 key={item.label}
@@ -158,10 +159,10 @@ export default function ScientistProgram() {
           </div>
         </motion.div>
 
-        {/* ── Stages Layout ──────────────────────── */}
+        {/* ── Stages Layout ──────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
 
-          {/* Left: Stage Navigation */}
+          {/* Left — Stage Navigation */}
           <motion.div
             className="lg:col-span-5"
             initial={{ opacity: 0, x: -30 }}
@@ -171,7 +172,7 @@ export default function ScientistProgram() {
             <div className="space-y-3 sticky top-24">
               {stages.map((stage, index) => {
                 const StageIcon = stage.icon;
-                const isActive = activeStage === index;
+                const isActive  = activeStage === index;
 
                 return (
                   <motion.button
@@ -199,7 +200,7 @@ export default function ScientistProgram() {
                         <StageIcon size={20} />
                       </div>
 
-                      {/* Content */}
+                      {/* Text */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <h4 className={`text-sm font-bold truncate
@@ -228,7 +229,7 @@ export default function ScientistProgram() {
                         </div>
                       </div>
 
-                      {/* Arrow indicator */}
+                      {/* Arrow */}
                       <ChevronRight
                         size={16}
                         className={`flex-shrink-0 transition-all duration-200
@@ -239,7 +240,7 @@ export default function ScientistProgram() {
                       />
                     </div>
 
-                    {/* Progress bar visual */}
+                    {/* Progress bar */}
                     {isActive && (
                       <motion.div
                         className="mt-3 h-1.5 rounded-full bg-dark-200/30 dark:bg-dark-600/30 overflow-hidden"
@@ -261,7 +262,7 @@ export default function ScientistProgram() {
             </div>
           </motion.div>
 
-          {/* Right: Stage Detail Card */}
+          {/* Right — Stage Detail Card */}
           <motion.div
             className="lg:col-span-7"
             initial={{ opacity: 0, x: 30 }}
@@ -281,10 +282,8 @@ export default function ScientistProgram() {
                   padding="none"
                   className={`border ${stages[activeStage].borderColor} overflow-hidden`}
                 >
-                  {/* Header gradient */}
-                  <div className={`relative px-6 sm:px-8 pt-8 pb-6
-                                   bg-gradient-to-br ${stages[activeStage].color}
-                                   bg-opacity-5`}>
+                  {/* Card Header */}
+                  <div className="relative px-6 sm:px-8 pt-8 pb-6">
                     <div className={`absolute inset-0 bg-gradient-to-br ${stages[activeStage].color} opacity-[0.06] dark:opacity-[0.12]`} />
 
                     <div className="relative z-10">
@@ -297,8 +296,7 @@ export default function ScientistProgram() {
                               Level {stages[activeStage].range}
                             </span>
                             <span className="text-xs font-medium text-dark-500 dark:text-dark-400
-                                             px-2 py-0.5 rounded-full
-                                             bg-dark-100 dark:bg-dark-800">
+                                             px-2 py-0.5 rounded-full bg-dark-100 dark:bg-dark-800">
                               {stages[activeStage].difficulty}
                             </span>
                           </div>
@@ -318,7 +316,7 @@ export default function ScientistProgram() {
                         </div>
                       </div>
 
-                      {/* Stats row */}
+                      {/* Stats */}
                       <div className="flex items-center gap-4 text-sm text-dark-500 dark:text-dark-400">
                         <span className="flex items-center gap-1.5">
                           <FlaskConical size={14} />
@@ -332,10 +330,10 @@ export default function ScientistProgram() {
                     </div>
                   </div>
 
-                  {/* Topics */}
+                  {/* Topics List */}
                   <div className="px-6 sm:px-8 py-6">
                     <h4 className="text-sm font-semibold text-dark-900 dark:text-white mb-4 flex items-center gap-2">
-                      <Sparkles size={14} className="text-scino-500" />
+                      <Sparkles size={14} className="text-emerald-500" />
                       What you&apos;ll master
                     </h4>
 
@@ -352,8 +350,7 @@ export default function ScientistProgram() {
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.1 + index * 0.08 }}
                         >
-                          <div className={`flex items-center justify-center
-                                          w-7 h-7 rounded-lg
+                          <div className={`flex items-center justify-center w-7 h-7 rounded-lg
                                           bg-gradient-to-br ${stages[activeStage].color}
                                           text-white flex-shrink-0`}>
                             <Check size={14} strokeWidth={3} />
@@ -364,8 +361,9 @@ export default function ScientistProgram() {
                           </span>
 
                           {index === 0 && (
-                            <span className="ml-auto text-2xs font-bold text-neon-green
-                                             bg-neon-green/10 px-2 py-0.5 rounded-full">
+                            <span className="ml-auto text-2xs font-bold text-emerald-600
+                                             bg-emerald-100 dark:bg-emerald-900/30
+                                             px-2 py-0.5 rounded-full">
                               Start here
                             </span>
                           )}
@@ -379,11 +377,11 @@ export default function ScientistProgram() {
                         variant="primary"
                         size="md"
                         href="/programs/scientist"
-                        icon={Beaker}
-                        iconRight={ArrowRight}
                         className="flex-1"
                       >
+                        <Beaker size={16} />
                         Start Scientist Path
+                        <ArrowRight size={16} />
                       </Button>
                       <Button
                         variant="secondary"
@@ -398,6 +396,7 @@ export default function ScientistProgram() {
               </motion.div>
             </AnimatePresence>
           </motion.div>
+
         </div>
       </div>
     </section>
