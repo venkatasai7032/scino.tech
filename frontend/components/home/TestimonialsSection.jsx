@@ -7,7 +7,7 @@
 
 import { useRef, useEffect, useState } from 'react';
 import { motion, useInView, useAnimationControls } from 'framer-motion';
-import Card from '../ui/Card';
+import Card from '@/components/ui/Card';
 import { Star, Quote, Users, TrendingUp, Award } from 'lucide-react';
 
 // ── Testimonial data ────────────────────────────
