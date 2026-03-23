@@ -8,7 +8,7 @@
 import { useRef, useState } from 'react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import Card from '@/components/ui/Card';
-import Button from '../ui/Button';
+import Button from '@/components/ui/Button';
 import {
   Code2, Terminal, Database, Globe, Cpu,
   Braces, FileCode, GitBranch, Layers,
