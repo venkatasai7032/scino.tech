@@ -7,7 +7,7 @@
 
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import Card from '../ui/Card';
+import Card from '@/components/ui/Card';
 import {
   Brain, Beaker, Code2, Gamepad2, Award,
   Microscope, Bot, Shield, Globe, Zap,
