@@ -7,7 +7,7 @@
 
 import { useRef, useState } from 'react';
 import { motion, useInView, useMotionValue, useTransform, useSpring } from 'framer-motion';
-import Card from '../ui/Card';
+import Card from '@/components/ui/Card';
 import Button from '../ui/Button';
 import {
   FlaskConical, Microscope, Cpu, Wifi, Zap,
