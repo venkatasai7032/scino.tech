@@ -3,17 +3,19 @@
 // ============================================
 //  SCINO — Navigation Bar
 //  Glassmorphism, responsive, animated
+//  ✅ Auth-aware: hides Get Started when logged in
 // ============================================
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import ThemeToggle from './ThemeToggle';
 import Button from './ui/Button';
 import {
   Menu, X, Beaker, Code2, FlaskConical,
-  LayoutDashboard, User, LogIn, Sparkles, Rocket, ChevronDown
+  LayoutDashboard, LogIn, Sparkles, Rocket, ChevronDown, LogOut
 } from 'lucide-react';
 
 // ── Navigation Links ────────────────────────────
@@ -33,10 +35,35 @@ const navLinks = [
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClientComponentClient();
+
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [user, setUser] = useState(null); // ✅ auth state
   const { scrollY } = useScroll();
+
+  // ── ✅ Supabase auth session check ────────────
+  useEffect(() => {
+    // Get current session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes (login/logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ── ✅ Logout handler ──────────────────────────
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
 
   // ── Track scroll position ─────────────────────
   useMotionValueEvent(scrollY, 'change', (latest) => {
@@ -90,8 +117,6 @@ export default function Navbar() {
                 transition={{ duration: 0.5 }}
               >
                 <Beaker className="w-5 h-5 text-white" strokeWidth={2.5} />
-
-                {/* Orbiting dot */}
                 <motion.div
                   className="absolute w-1.5 h-1.5 rounded-full bg-neon-green"
                   animate={{ rotate: 360 }}
@@ -123,7 +148,6 @@ export default function Navbar() {
                   onMouseLeave={() => setActiveDropdown(null)}
                 >
                   {link.children ? (
-                    /* ── Dropdown Trigger ──────────── */
                     <button
                       className={`
                         flex items-center gap-1 px-4 py-2 rounded-lg
@@ -142,7 +166,6 @@ export default function Navbar() {
                       />
                     </button>
                   ) : (
-                    /* ── Regular Link ──────────────── */
                     <Link
                       href={link.href}
                       className={`
@@ -157,7 +180,6 @@ export default function Navbar() {
                     >
                       {link.icon && <link.icon size={15} />}
                       {link.label}
-
                       {isActive(link.href) && (
                         <motion.div
                           className="absolute bottom-0 left-3 right-3 h-0.5
@@ -176,8 +198,7 @@ export default function Navbar() {
                         className="absolute top-full left-0 mt-1 w-72 py-2
                                    bg-white dark:bg-dark-800
                                    border border-dark-200 dark:border-dark-700
-                                   rounded-2xl shadow-xl dark:shadow-2xl
-                                   overflow-hidden"
+                                   rounded-2xl shadow-xl dark:shadow-2xl overflow-hidden"
                         initial={{ opacity: 0, y: -8, scale: 0.96 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.96 }}
@@ -225,14 +246,38 @@ export default function Navbar() {
             <div className="flex items-center gap-2.5">
               <ThemeToggle size="md" />
 
-              {/* Desktop auth buttons */}
+              {/* ✅ Desktop auth buttons — conditional */}
               <div className="hidden lg:flex items-center gap-2.5">
-                <Button variant="ghost" size="sm" href="/login" icon={LogIn}>
-                  Log in
-                </Button>
-                <Button variant="primary" size="sm" href="/signup" icon={Rocket}>
-                  Get Started
-                </Button>
+                {user ? (
+                  // ✅ Logged in → show Dashboard + Logout
+                  <>
+                    <Button variant="primary" size="sm" href="/dashboard" icon={LayoutDashboard}>
+                      Dashboard
+                    </Button>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg
+                                 text-sm font-medium
+                                 text-dark-600 dark:text-dark-300
+                                 hover:text-red-500 dark:hover:text-red-400
+                                 hover:bg-red-50 dark:hover:bg-red-950/20
+                                 transition-all duration-200 cursor-pointer"
+                    >
+                      <LogOut size={15} />
+                      Log out
+                    </button>
+                  </>
+                ) : (
+                  // ✅ Not logged in → show Log in + Get Started
+                  <>
+                    <Button variant="ghost" size="sm" href="/login" icon={LogIn}>
+                      Log in
+                    </Button>
+                    <Button variant="primary" size="sm" href="/signup" icon={Rocket}>
+                      Get Started
+                    </Button>
+                  </>
+                )}
               </div>
 
               {/* Mobile menu toggle */}
@@ -250,23 +295,11 @@ export default function Navbar() {
               >
                 <AnimatePresence mode="wait">
                   {isOpen ? (
-                    <motion.div
-                      key="close"
-                      initial={{ rotate: -90, opacity: 0 }}
-                      animate={{ rotate: 0, opacity: 1 }}
-                      exit={{ rotate: 90, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
+                    <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
                       <X size={20} />
                     </motion.div>
                   ) : (
-                    <motion.div
-                      key="menu"
-                      initial={{ rotate: 90, opacity: 0 }}
-                      animate={{ rotate: 0, opacity: 1 }}
-                      exit={{ rotate: -90, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
+                    <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}>
                       <Menu size={20} />
                     </motion.div>
                   )}
@@ -281,37 +314,28 @@ export default function Navbar() {
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               className="fixed inset-0 z-40 bg-dark-950/60 backdrop-blur-sm lg:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
             />
 
-            {/* Mobile Panel */}
             <motion.div
               className="fixed top-0 right-0 bottom-0 z-40 w-full max-w-sm
                          bg-white dark:bg-dark-900
                          border-l border-dark-200 dark:border-dark-800
-                         shadow-2xl lg:hidden
-                         flex flex-col"
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
+                         shadow-2xl lg:hidden flex flex-col"
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             >
               {/* Mobile Header */}
-              <div className="flex items-center justify-between px-6 h-16
-                              border-b border-dark-100 dark:border-dark-800">
+              <div className="flex items-center justify-between px-6 h-16 border-b border-dark-100 dark:border-dark-800">
                 <span className="text-lg font-bold text-dark-900 dark:text-white">Menu</span>
                 <motion.button
                   className="flex items-center justify-center w-10 h-10 rounded-xl
                              hover:bg-dark-100 dark:hover:bg-dark-800
                              text-dark-500 transition-colors cursor-pointer"
-                  onClick={() => setIsOpen(false)}
-                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setIsOpen(false)} whileTap={{ scale: 0.9 }}
                 >
                   <X size={20} />
                 </motion.button>
@@ -329,8 +353,7 @@ export default function Navbar() {
                     >
                       {link.children ? (
                         <div className="mb-3">
-                          <p className="px-4 py-2 text-xs font-semibold uppercase tracking-widest
-                                        text-dark-400 dark:text-dark-500">
+                          <p className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-dark-400 dark:text-dark-500">
                             {link.label}
                           </p>
                           <div className="space-y-0.5">
@@ -347,9 +370,7 @@ export default function Navbar() {
                                 <child.icon size={18} className="text-scino-500" />
                                 <span className="text-sm font-medium">{child.label}</span>
                                 {child.badge && (
-                                  <span className="ml-auto text-2xs font-bold px-2 py-0.5 rounded-full
-                                                   bg-scino-50 dark:bg-scino-950/50
-                                                   text-scino-500 dark:text-scino-400">
+                                  <span className="ml-auto text-2xs font-bold px-2 py-0.5 rounded-full bg-scino-50 dark:bg-scino-950/50 text-scino-500 dark:text-scino-400">
                                     {child.badge}
                                   </span>
                                 )}
@@ -361,8 +382,7 @@ export default function Navbar() {
                         <Link
                           href={link.href}
                           className={`
-                            flex items-center gap-3 px-4 py-3 rounded-xl
-                            text-sm font-medium
+                            flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
                             transition-colors duration-150
                             ${isActive(link.href)
                               ? 'bg-scino-50 dark:bg-scino-950/30 text-scino-600 dark:text-scino-400'
@@ -380,39 +400,46 @@ export default function Navbar() {
                 </div>
               </div>
 
-              {/* Mobile Footer Actions */}
+              {/* ✅ Mobile Footer Actions — conditional */}
               <motion.div
-                className="px-6 py-5 border-t border-dark-100 dark:border-dark-800
-                           space-y-3"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                className="px-6 py-5 border-t border-dark-100 dark:border-dark-800 space-y-3"
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.3 }}
               >
-                <Button
-                  variant="primary"
-                  size="lg"
-                  fullWidth
-                  href="/signup"
-                  icon={Rocket}
-                >
-                  Get Started — Free
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  fullWidth
-                  href="/login"
-                  icon={LogIn}
-                >
-                  Log In
-                </Button>
+                {user ? (
+                  // ✅ Logged in → Dashboard + Logout
+                  <>
+                    <Button variant="primary" size="lg" fullWidth href="/dashboard" icon={LayoutDashboard}>
+                      Go to Dashboard
+                    </Button>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
+                                 text-sm font-medium text-red-500 border border-red-200 dark:border-red-900
+                                 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors duration-200"
+                    >
+                      <LogOut size={18} />
+                      Log Out
+                    </button>
+                  </>
+                ) : (
+                  // ✅ Not logged in → Get Started + Log In
+                  <>
+                    <Button variant="primary" size="lg" fullWidth href="/signup" icon={Rocket}>
+                      Get Started — Free
+                    </Button>
+                    <Button variant="secondary" size="lg" fullWidth href="/login" icon={LogIn}>
+                      Log In
+                    </Button>
+                  </>
+                )}
               </motion.div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
-      {/* ── Spacer to prevent content behind navbar ── */}
+      {/* ── Spacer ── */}
       <div className="h-16 lg:h-18" />
     </>
   );
