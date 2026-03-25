@@ -1,9 +1,3 @@
-'use client';
-
-// ============================================
-//  SCINO — Supabase Client (Frontend)
-// ============================================
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
