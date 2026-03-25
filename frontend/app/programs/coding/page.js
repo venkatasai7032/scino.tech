@@ -11,7 +11,6 @@ import { Code2, Star, Trophy, ChevronRight, Lock } from 'lucide-react';
 const levels = Array.from({ length: 100 }, (_, i) => {
   const num = i + 1;
   let color, category;
-
   if (num <= 25) { color = 'from-sky-400 to-cyan-500'; category = 'Web Foundations'; }
   else if (num <= 50) { color = 'from-violet-400 to-purple-500'; category = 'Frontend Mastery'; }
   else if (num <= 75) { color = 'from-emerald-400 to-teal-500'; category = 'Full Stack'; }
@@ -62,8 +61,7 @@ const levels = Array.from({ length: 100 }, (_, i) => {
   return {
     number: num,
     title: titles[num] || `Level ${num}`,
-    color,
-    category,
+    color, category,
     xp: num <= 25 ? 40 : num <= 50 ? 80 : num <= 75 ? 120 : num === 100 ? 1000 : 160,
     duration: num <= 25 ? '20 min' : num <= 50 ? '30 min' : num <= 75 ? '45 min' : '60 min',
   };
@@ -80,36 +78,36 @@ const stages = [
 export default function CodingProgramPage() {
   const [activeStage, setActiveStage] = useState('All');
   const [search, setSearch] = useState('');
-  const [completedLevels, setCompletedLevels] = useState(new Set());
-  const [highestUnlocked, setHighestUnlocked] = useState(1); // ✅ Level 1 always open
+  const [completedNums, setCompletedNums] = useState(new Set());
+  const [highestUnlocked, setHighestUnlocked] = useState(1);
   const [loading, setLoading] = useState(true);
   const headerRef = useRef(null);
   const isInView = useInView(headerRef, { once: true });
 
-  // ✅ Fetch user progress from Supabase
   useEffect(() => {
     const fetchProgress = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setLoading(false); return; }
 
-      const { data, error } = await supabase
+      if (!session) {
+        setHighestUnlocked(1);
+        setLoading(false);
+        return;
+      }
+
+      const { data } = await supabase
         .from('progress')
-        .select('level_id, completed')
+        .select('level_number, completed')
         .eq('user_id', session.user.id)
-        .eq('completed', true);
+        .eq('completed', true)
+        .not('level_number', 'is', null);
 
       if (data && data.length > 0) {
-        // level_id UUID కాబట్టి levels table తో match చేయాలి
-        // ఇక్కడ level number గా store అయితే directly use చేయవచ్చు
-        // Completed level numbers set చేయండి
-        const completedNums = new Set(data.map(d => d.level_id));
-        setCompletedLevels(completedNums);
-
-        // Highest unlocked = max completed + 1
-        const maxCompleted = Math.max(...data.map(d => Number(d.level_id) || 0));
+        const nums = new Set(data.map(d => d.level_number));
+        setCompletedNums(nums);
+        const maxCompleted = Math.max(...data.map(d => d.level_number));
         setHighestUnlocked(Math.min(maxCompleted + 1, 100));
       } else {
-        setHighestUnlocked(1); // Only level 1 unlocked
+        setHighestUnlocked(1);
       }
       setLoading(false);
     };
@@ -117,9 +115,8 @@ export default function CodingProgramPage() {
     fetchProgress();
   }, []);
 
-  // ✅ Check if level is unlocked
-  const isUnlocked = (levelNum) => levelNum <= highestUnlocked;
-  const isCompleted = (levelNum) => completedLevels.has(levelNum);
+  const isUnlocked = (num) => num <= highestUnlocked;
+  const isCompleted = (num) => completedNums.has(num);
 
   const filtered = levels.filter(lvl => {
     const stageObj = stages.find(s => s.name === activeStage);
@@ -132,6 +129,8 @@ export default function CodingProgramPage() {
     <>
       <Navbar />
       <main className="min-h-screen bg-white dark:bg-dark-950">
+
+        {/* Header */}
         <div ref={headerRef} className="relative bg-gradient-to-br from-sky-500 to-blue-600 pt-20 pb-16 px-4 overflow-hidden">
           <div className="absolute inset-0 bg-grid opacity-10" />
           <div className="relative z-10 max-w-4xl mx-auto text-center">
@@ -152,6 +151,7 @@ export default function CodingProgramPage() {
           </div>
         </div>
 
+        {/* Filter bar */}
         <div className="sticky top-16 z-20 bg-white dark:bg-dark-950 border-b border-dark-200 dark:border-dark-800 px-4 py-3">
           <div className="max-w-6xl mx-auto flex flex-col sm:flex-row gap-3 items-center justify-between">
             <div className="flex gap-2 flex-wrap">
@@ -169,6 +169,7 @@ export default function CodingProgramPage() {
           </div>
         </div>
 
+        {/* Levels grid */}
         <div className="max-w-6xl mx-auto px-4 py-10">
           {loading ? (
             <div className="flex items-center justify-center py-20">
@@ -183,7 +184,6 @@ export default function CodingProgramPage() {
                 return (
                   <motion.div key={level.number} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.02 }}>
                     {unlocked ? (
-                      // ✅ Unlocked — clickable
                       <Link href={`/learn/coding/${level.number}`}>
                         <div className={`group relative p-4 rounded-2xl border transition-all duration-300 cursor-pointer
                           ${completed
@@ -193,10 +193,14 @@ export default function CodingProgramPage() {
                           <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${level.color} text-white font-bold text-sm mb-3`}>
                             {completed ? '✓' : level.number}
                           </div>
-                          {level.number === 100 && <div className="absolute top-3 right-3 text-amber-400 text-lg">🏆</div>}
-                          {completed && <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                            <span className="text-white text-xs">✓</span>
-                          </div>}
+                          {completed && (
+                            <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                              <span className="text-white text-xs">✓</span>
+                            </div>
+                          )}
+                          {level.number === 100 && !completed && (
+                            <div className="absolute top-3 right-3 text-amber-400 text-lg">🏆</div>
+                          )}
                           <h3 className={`text-sm font-bold mb-1 line-clamp-2 transition-colors
                             ${completed ? 'text-emerald-700 dark:text-emerald-400' : 'text-dark-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400'}`}>
                             {level.title}
@@ -208,32 +212,35 @@ export default function CodingProgramPage() {
                             </span>
                             <span className="text-2xs text-dark-400 dark:text-dark-500">{level.duration}</span>
                           </div>
-                          <ChevronRight size={14} className="absolute right-3 bottom-4 text-dark-300 dark:text-dark-600 group-hover:text-sky-500 group-hover:translate-x-1 transition-all duration-200" />
+                          <ChevronRight size={14} className="absolute right-3 bottom-4 text-dark-300 group-hover:text-sky-500 group-hover:translate-x-1 transition-all duration-200" />
                         </div>
                       </Link>
                     ) : (
-                      // 🔒 Locked — not clickable
+                      // 🔒 Locked
                       <div className="relative p-4 rounded-2xl border border-dark-200/40 dark:border-dark-800/40
-                                      bg-dark-50/50 dark:bg-dark-900/30 cursor-not-allowed opacity-60">
-                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl
-                                        bg-dark-200 dark:bg-dark-700 text-dark-400 font-bold text-sm mb-3">
-                          {level.number}
-                        </div>
-                        <div className="absolute top-3 right-3">
-                          <Lock size={14} className="text-dark-400 dark:text-dark-500" />
-                        </div>
-                        <h3 className="text-sm font-bold text-dark-400 dark:text-dark-600 mb-1 line-clamp-2">
-                          {level.title}
-                        </h3>
-                        <p className="text-2xs text-dark-300 dark:text-dark-700 mb-3">{level.category}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-1 text-2xs font-medium text-dark-300 dark:text-dark-700">
-                            <Star size={11} />{level.xp} XP
-                          </span>
-                          <span className="text-2xs text-dark-300 dark:text-dark-700">{level.duration}</span>
-                        </div>
-                        <div className="absolute bottom-3 right-3 text-2xs text-dark-300 dark:text-dark-600">
-                          Complete previous level
+                                      bg-dark-50/50 dark:bg-dark-900/30 cursor-not-allowed select-none">
+                        <div className="absolute inset-0 rounded-2xl bg-white/40 dark:bg-dark-950/40 backdrop-blur-[1px]" />
+                        <div className="relative">
+                          <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl
+                                          bg-dark-200 dark:bg-dark-700 text-dark-400 font-bold text-sm mb-3">
+                            {level.number}
+                          </div>
+                          <div className="absolute top-0 right-0">
+                            <Lock size={14} className="text-dark-400 dark:text-dark-500" />
+                          </div>
+                          <h3 className="text-sm font-bold text-dark-400 dark:text-dark-600 mb-1 line-clamp-2">
+                            {level.title}
+                          </h3>
+                          <p className="text-2xs text-dark-300 dark:text-dark-700 mb-3">{level.category}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-1 text-2xs font-medium text-dark-300 dark:text-dark-700">
+                              <Star size={11} />{level.xp} XP
+                            </span>
+                            <span className="text-2xs text-dark-300 dark:text-dark-700">{level.duration}</span>
+                          </div>
+                          <p className="text-2xs text-dark-300 dark:text-dark-600 mt-2">
+                            🔒 Complete level {level.number - 1} first
+                          </p>
                         </div>
                       </div>
                     )}
