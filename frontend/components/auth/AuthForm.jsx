@@ -138,7 +138,7 @@ export default function AuthForm({ mode = 'login' }) {
           password: formData.password,
         });
         setSuccess('Welcome back! Redirecting...');
-        setTimeout(() => router.push('/dashboard'), 1500);
+        setTimeout(() => { window.location.href = '/dashboard'; }, 1500);
       }
     } catch (err) {
       console.error('Auth error:', err);
