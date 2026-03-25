@@ -122,21 +122,53 @@ export default function CodingLessonPage() {
     );
   }
 
-  const handleComplete = async () => {
-    if (!user) { router.push('/login'); return; }
-    setCompleting(true);
-    try {
-      const { data: profile } = await supabase.from('users').select('id, xp_points').eq('auth_id', user.id).single();
-      if (profile) {
-        await supabase.from('users').update({ xp_points: profile.xp_points + lesson.xp }).eq('id', profile.id);
-        setCompleted(true);
+ const handleComplete = async () => {
+  if (!user) { router.push('/login'); return; }
+  setCompleting(true);
+  try {
+    const { data: profile } = await supabase
+      .from('users')
+      .select('id, xp_points')
+      .eq('auth_id', user.id)
+      .single();
+
+    if (profile) {
+      // ✅ XP update
+      await supabase
+        .from('users')
+        .update({ xp_points: profile.xp_points + lesson.xp })
+        .eq('id', profile.id);
+
+      // ✅ Progress table లో save చేయడం — ఇదే missing piece!
+      await supabase
+        .from('progress')
+        .upsert({
+          user_id: user.id,
+          level_number: levelNum,
+          completed: true,
+          xp_earned: lesson.xp,
+          completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,level_number',
+          ignoreDuplicates: false,
+        });
+
+      setCompleted(true);
+
+      // ✅ 2 seconds తర్వాత next level కి auto redirect
+      if (levelNum < 100) {
+        setTimeout(() => {
+          router.push(`/learn/coding/${levelNum + 1}`);
+        }, 2000);
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setCompleting(false);
     }
-  };
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setCompleting(false);
+  }
+};
 
   const handleCopy = () => {
     navigator.clipboard.writeText(lesson.code);
