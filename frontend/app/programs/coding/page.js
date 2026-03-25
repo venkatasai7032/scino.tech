@@ -1,11 +1,12 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Code2, Star, Trophy, ChevronRight, Globe, Monitor, Server, Bot } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { Code2, Star, Trophy, ChevronRight, Lock } from 'lucide-react';
 
 const levels = Array.from({ length: 100 }, (_, i) => {
   const num = i + 1;
@@ -79,8 +80,46 @@ const stages = [
 export default function CodingProgramPage() {
   const [activeStage, setActiveStage] = useState('All');
   const [search, setSearch] = useState('');
+  const [completedLevels, setCompletedLevels] = useState(new Set());
+  const [highestUnlocked, setHighestUnlocked] = useState(1); // ✅ Level 1 always open
+  const [loading, setLoading] = useState(true);
   const headerRef = useRef(null);
   const isInView = useInView(headerRef, { once: true });
+
+  // ✅ Fetch user progress from Supabase
+  useEffect(() => {
+    const fetchProgress = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setLoading(false); return; }
+
+      const { data, error } = await supabase
+        .from('progress')
+        .select('level_id, completed')
+        .eq('user_id', session.user.id)
+        .eq('completed', true);
+
+      if (data && data.length > 0) {
+        // level_id UUID కాబట్టి levels table తో match చేయాలి
+        // ఇక్కడ level number గా store అయితే directly use చేయవచ్చు
+        // Completed level numbers set చేయండి
+        const completedNums = new Set(data.map(d => d.level_id));
+        setCompletedLevels(completedNums);
+
+        // Highest unlocked = max completed + 1
+        const maxCompleted = Math.max(...data.map(d => Number(d.level_id) || 0));
+        setHighestUnlocked(Math.min(maxCompleted + 1, 100));
+      } else {
+        setHighestUnlocked(1); // Only level 1 unlocked
+      }
+      setLoading(false);
+    };
+
+    fetchProgress();
+  }, []);
+
+  // ✅ Check if level is unlocked
+  const isUnlocked = (levelNum) => levelNum <= highestUnlocked;
+  const isCompleted = (levelNum) => completedLevels.has(levelNum);
 
   const filtered = levels.filter(lvl => {
     const stageObj = stages.find(s => s.name === activeStage);
@@ -131,33 +170,78 @@ export default function CodingProgramPage() {
         </div>
 
         <div className="max-w-6xl mx-auto px-4 py-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filtered.map((level, index) => (
-              <motion.div key={level.number} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.02 }}>
-                <Link href={`/learn/coding/${level.number}`}>
-                  <div className="group relative p-4 rounded-2xl border border-dark-200/60 dark:border-dark-700/60
-                                  bg-white dark:bg-dark-900 hover:shadow-lg hover:border-sky-300 dark:hover:border-sky-700
-                                  transition-all duration-300 cursor-pointer">
-                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${level.color} text-white font-bold text-sm mb-3`}>
-                      {level.number}
-                    </div>
-                    {level.number === 100 && <div className="absolute top-3 right-3 text-amber-400 text-lg">🏆</div>}
-                    <h3 className="text-sm font-bold text-dark-900 dark:text-white mb-1 line-clamp-2 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
-                      {level.title}
-                    </h3>
-                    <p className="text-2xs text-dark-400 dark:text-dark-500 mb-3">{level.category}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1 text-2xs font-medium text-amber-500">
-                        <Star size={11} className="fill-amber-500" />{level.xp} XP
-                      </span>
-                      <span className="text-2xs text-dark-400 dark:text-dark-500">{level.duration}</span>
-                    </div>
-                    <ChevronRight size={14} className="absolute right-3 bottom-4 text-dark-300 dark:text-dark-600 group-hover:text-sky-500 group-hover:translate-x-1 transition-all duration-200" />
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filtered.map((level, index) => {
+                const unlocked = isUnlocked(level.number);
+                const completed = isCompleted(level.number);
+
+                return (
+                  <motion.div key={level.number} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.02 }}>
+                    {unlocked ? (
+                      // ✅ Unlocked — clickable
+                      <Link href={`/learn/coding/${level.number}`}>
+                        <div className={`group relative p-4 rounded-2xl border transition-all duration-300 cursor-pointer
+                          ${completed
+                            ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/20'
+                            : 'border-dark-200/60 dark:border-dark-700/60 bg-white dark:bg-dark-900 hover:shadow-lg hover:border-sky-300 dark:hover:border-sky-700'
+                          }`}>
+                          <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${level.color} text-white font-bold text-sm mb-3`}>
+                            {completed ? '✓' : level.number}
+                          </div>
+                          {level.number === 100 && <div className="absolute top-3 right-3 text-amber-400 text-lg">🏆</div>}
+                          {completed && <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                            <span className="text-white text-xs">✓</span>
+                          </div>}
+                          <h3 className={`text-sm font-bold mb-1 line-clamp-2 transition-colors
+                            ${completed ? 'text-emerald-700 dark:text-emerald-400' : 'text-dark-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400'}`}>
+                            {level.title}
+                          </h3>
+                          <p className="text-2xs text-dark-400 dark:text-dark-500 mb-3">{level.category}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-1 text-2xs font-medium text-amber-500">
+                              <Star size={11} className="fill-amber-500" />{level.xp} XP
+                            </span>
+                            <span className="text-2xs text-dark-400 dark:text-dark-500">{level.duration}</span>
+                          </div>
+                          <ChevronRight size={14} className="absolute right-3 bottom-4 text-dark-300 dark:text-dark-600 group-hover:text-sky-500 group-hover:translate-x-1 transition-all duration-200" />
+                        </div>
+                      </Link>
+                    ) : (
+                      // 🔒 Locked — not clickable
+                      <div className="relative p-4 rounded-2xl border border-dark-200/40 dark:border-dark-800/40
+                                      bg-dark-50/50 dark:bg-dark-900/30 cursor-not-allowed opacity-60">
+                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl
+                                        bg-dark-200 dark:bg-dark-700 text-dark-400 font-bold text-sm mb-3">
+                          {level.number}
+                        </div>
+                        <div className="absolute top-3 right-3">
+                          <Lock size={14} className="text-dark-400 dark:text-dark-500" />
+                        </div>
+                        <h3 className="text-sm font-bold text-dark-400 dark:text-dark-600 mb-1 line-clamp-2">
+                          {level.title}
+                        </h3>
+                        <p className="text-2xs text-dark-300 dark:text-dark-700 mb-3">{level.category}</p>
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1 text-2xs font-medium text-dark-300 dark:text-dark-700">
+                            <Star size={11} />{level.xp} XP
+                          </span>
+                          <span className="text-2xs text-dark-300 dark:text-dark-700">{level.duration}</span>
+                        </div>
+                        <div className="absolute bottom-3 right-3 text-2xs text-dark-300 dark:text-dark-600">
+                          Complete previous level
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </main>
       <Footer />
