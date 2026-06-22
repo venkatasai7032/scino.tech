@@ -1,0 +1,11 @@
+PLACEHOLDER IMAGE FILE
+
+Replace this file with the actual founder.jpg photo of Venkata Sai Yadav.
+
+Recommended specifications:
+- Size: 400x400px or larger
+- Format: JPG
+- Name: founder.jpg
+- Location: C:\Users\sai\CascadeProjects\scino.tech\frontend\public\founder.jpg
+
+After adding the real photo, delete this placeholder.txt file.
