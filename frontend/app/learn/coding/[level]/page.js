@@ -144,13 +144,14 @@ export default function CodingLessonPage() {
         .from('progress')
         .upsert({
           user_id: user.id,
+          course_id: 'coding',
           level_number: levelNum,
           completed: true,
           xp_earned: lesson.xp,
           completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         }, {
-          onConflict: 'user_id,level_number',
+          onConflict: 'user_id,course_id,level_number',
           ignoreDuplicates: false,
         });
 

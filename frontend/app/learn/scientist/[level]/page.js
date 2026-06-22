@@ -7,105 +7,50 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { supabase } from '@/lib/supabase';
+import { getScientistLevel } from '@/lib/scientist';
 import {
   Beaker, ChevronLeft, ChevronRight, Star,
   Clock, Shield, CheckCircle, Play, Package,
   Lightbulb, AlertTriangle, Trophy, Lock
 } from 'lucide-react';
 
-// ── Experiment data for all 100 levels ──────────
-const experiments = {
-  1: {
-    title: 'Simple Motor Experiment',
-    difficulty: 'Beginner',
-    xp: 50,
-    duration: '30 min',
-    materials: [
-      { name: 'AA Battery (1.5V)', qty: '2' },
-      { name: 'Copper Wire (thin)', qty: '50cm' },
-      { name: 'Small Magnet', qty: '1' },
-      { name: 'Paper clips', qty: '2' },
-      { name: 'Rubber bands', qty: '2' },
-    ],
-    steps: [
-      'Take the copper wire and wind it into a coil of about 20 turns.',
-      'Strip the insulation from both ends of the wire.',
-      'Connect the wire ends to the paper clips — these will be the supports.',
-      'Place the magnet below the coil.',
-      'Connect the battery to the paper clips.',
-      'Give the coil a small push — it should start spinning!',
-      'Observe the spinning and write down what you see.',
-    ],
-    safety: [
-      'Do not touch the wire when connected — it may get warm.',
-      'Use only AA batteries (1.5V) — never use higher voltage.',
-      'Keep magnets away from electronic devices.',
-    ],
-    howItWorks: 'When electric current flows through the coil, it creates a magnetic field. This magnetic field interacts with the permanent magnet below, creating a force that makes the coil spin. This is the basic principle behind every electric motor in the world — from toys to electric cars!',
-    youtubeSearch: 'simple homopolar motor experiment for kids',
-    category: 'Basic Electricity',
-  },
-  2: {
-    title: 'Battery & Wire Circuits',
-    difficulty: 'Beginner',
-    xp: 50,
-    duration: '25 min',
-    materials: [
-      { name: 'AA Battery', qty: '1' },
-      { name: 'Copper wire', qty: '30cm' },
-      { name: 'Small LED bulb', qty: '1' },
-      { name: 'Tape', qty: 'some' },
-    ],
-    steps: [
-      'Strip both ends of two pieces of wire.',
-      'Connect one wire from the positive (+) end of the battery to the long leg of the LED.',
-      'Connect another wire from the negative (-) end of the battery to the short leg of the LED.',
-      'Observe the LED lighting up!',
-      'Try disconnecting one wire — what happens?',
-      'Try connecting two LEDs in series.',
-    ],
-    safety: [
-      'Never short circuit a battery — do not connect + directly to -.',
-      'Use only LEDs — do not use regular bulbs with low voltage.',
-      'If battery gets hot, disconnect immediately.',
-    ],
-    howItWorks: 'A circuit needs a complete loop for electricity to flow. Electrons flow from the negative terminal of the battery, through the wire, through the LED (which converts electrical energy to light), and back to the positive terminal. Break the loop anywhere and the current stops!',
-    youtubeSearch: 'simple battery wire LED circuit experiment for beginners',
-    category: 'Basic Electricity',
-  },
-};
-
-// ── Generate basic data for levels without specific data ──
+// ── Get experiment data from backend scientist content ──────────
 function getExperimentData(levelNum) {
-  if (experiments[levelNum]) return experiments[levelNum];
+  const level = getScientistLevel(levelNum);
+  
+  if (!level) {
+    return {
+      title: `Level ${levelNum} Experiment`,
+      difficulty: 'Beginner',
+      xp: 50,
+      duration: '30 min',
+      materials: [{ name: 'Check equipment board for materials', qty: '' }],
+      steps: ['This experiment content is being prepared.', 'Check back soon for full instructions!'],
+      safety: ['Always work with adult supervision.', 'Follow general electrical safety rules.'],
+      howItWorks: 'Detailed explanation coming soon.',
+      youtubeSearch: `level ${levelNum} science experiment for students`,
+      category: 'Science',
+    };
+  }
 
-  const titles = {
-    3: 'LED Light Circuit', 4: 'Small Motor Car', 5: 'Water Pump Motor',
-    6: 'Series & Parallel Circuits', 7: 'Electromagnet Build', 8: 'Solar Cell Basics',
-    9: 'Wind Vane Project', 10: 'Rain Gauge Build', 11: 'Mini Vacuum Cleaner',
-    12: 'Simple Fan System', 13: 'Drone Concept Model', 14: 'Battery Powered Machine',
-    15: 'Electric Bell Circuit',
-  };
-
-  const xpMap = n => n <= 20 ? 50 : n <= 40 ? 100 : n <= 60 ? 150 : n <= 80 ? 200 : n === 100 ? 1000 : 250;
-
+  // Map backend data structure to frontend display structure
   return {
-    title: titles[levelNum] || `Level ${levelNum} Experiment`,
-    difficulty: levelNum <= 20 ? 'Beginner' : levelNum <= 60 ? 'Intermediate' : levelNum <= 80 ? 'Advanced' : 'Expert',
-    xp: xpMap(levelNum),
-    duration: levelNum <= 20 ? '30 min' : levelNum <= 60 ? '45 min' : '60 min',
-    materials: [
-      { name: 'Check equipment board for materials', qty: '' },
-    ],
-    steps: [
-      'This experiment content is being prepared.',
-      'Check back soon for full instructions!',
-      'Meanwhile, watch the YouTube video below for a preview.',
-    ],
-    safety: ['Always work with adult supervision.', 'Follow general electrical safety rules.'],
-    howItWorks: 'Detailed explanation coming soon. Watch the video demo to understand the concept!',
-    youtubeSearch: `level ${levelNum} science experiment for students`,
-    category: levelNum <= 20 ? 'Basic Electricity' : levelNum <= 40 ? 'Electronics' : levelNum <= 60 ? 'Advanced Electronics' : levelNum <= 80 ? 'Robotics' : 'Advanced Robotics',
+    title: level.title,
+    difficulty: level.difficulty,
+    xp: level.xpReward,
+    duration: level.estimatedTime,
+    materials: level.materials.map(m => ({
+      name: m.name,
+      qty: m.quantity ? `${m.quantity}` : '',
+      cost: m.estimatedCost || '',
+    })),
+    steps: level.steps.map(step => 
+      typeof step === 'string' ? step : step.instruction
+    ),
+    safety: level.safetyInstructions || [],
+    howItWorks: level.explanation?.simple || level.howItWorks || '',
+    youtubeSearch: level.youtubeVideoId ? `video ${level.youtubeVideoId}` : `${level.title} experiment`,
+    category: level.category,
   };
 }
 
@@ -163,6 +108,22 @@ export default function ExperimentPage() {
           .from('users')
           .update({ xp_points: profile.xp_points + experiment.xp })
           .eq('id', profile.id);
+
+        // Track progress in progress table
+        await supabase
+          .from('progress')
+          .upsert({
+            user_id: user.id,
+            course_id: 'scientist',
+            level_number: levelNum,
+            completed: true,
+            xp_earned: experiment.xp,
+            completed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id,course_id,level_number',
+            ignoreDuplicates: false,
+          });
 
         setCompleted(true);
       }

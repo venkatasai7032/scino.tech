@@ -9,21 +9,52 @@ import ThemeToggle from './ThemeToggle';
 import Button from './ui/Button';
 import {
   Menu, X, Beaker, Code2, FlaskConical,
-  LayoutDashboard, LogIn, Sparkles, Rocket, ChevronDown, LogOut
+  LayoutDashboard, LogIn, Sparkles, Rocket, ChevronDown, LogOut, Languages
 } from 'lucide-react';
+
+const translations = {
+  en: {
+    programs: 'Programs',
+    scientistPath: 'Scientist Path',
+    codingPath: 'Coding Path',
+    aiMl: 'AI & ML',
+    labs: 'Labs',
+    about: 'About',
+    dashboard: 'Dashboard',
+    login: 'Log in',
+    getStarted: 'Get Started',
+    logout: 'Log out',
+    goToDashboard: 'Go to Dashboard',
+    menu: 'Menu',
+  },
+  te: {
+    programs: 'కార్యక్రమాలు',
+    scientistPath: 'శాస్త్రవేత్త మార్గం',
+    codingPath: 'కోడింగ్ మార్గం',
+    aiMl: 'AI & ML',
+    labs: 'ల్యాబ్‌లు',
+    about: 'గురించి',
+    dashboard: 'డాష్‌బోర్డ్',
+    login: 'లాగిన్',
+    getStarted: 'ప్రారంభించండి',
+    logout: 'లాగ్అవుట్',
+    goToDashboard: 'డాష్‌బోర్డ్‌కి వెళ్లండి',
+    menu: 'మెనూ',
+  },
+};
 
 const navLinks = [
   {
-    label: 'Programs',
+    label: 'programs',
     children: [
-      { label: 'Scientist Path', href: '/programs/scientist', icon: Beaker, badge: '100 Levels' },
-      { label: 'Coding Path', href: '/programs/coding', icon: Code2, badge: '100 Levels' },
-      { label: 'AI & ML', href: '/programs/ai-ml', icon: Sparkles, badge: 'New' },
+      { label: 'scientistPath', href: '/programs/scientist', icon: Beaker, badge: '100 Levels' },
+      { label: 'codingPath', href: '/programs/coding', icon: Code2, badge: '100 Levels' },
+      { label: 'aiMl', href: '/programs/ai-ml', icon: Sparkles, badge: 'New' },
     ],
   },
-  { label: 'Labs', href: '/labs', icon: FlaskConical },
-  { label: 'About', href: '/#founder' },
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'labs', href: '/labs', icon: FlaskConical },
+  { label: 'about', href: '/#founder' },
+  { label: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
 ];
 
 export default function Navbar() {
@@ -35,7 +66,34 @@ export default function Navbar() {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true); // ✅ loading state
+  const [language, setLanguage] = useState('en');
+  const [showTooltip, setShowTooltip] = useState(false);
   const { scrollY } = useScroll();
+
+  // Load language preference from localStorage
+  useEffect(() => {
+    const savedLang = localStorage.getItem('scino-language');
+    if (savedLang) {
+      setLanguage(savedLang);
+    }
+  }, []);
+
+  // Save language preference to localStorage
+  const toggleLanguage = () => {
+    const newLang = language === 'en' ? 'te' : 'en';
+    setLanguage(newLang);
+    localStorage.setItem('scino-language', newLang);
+    
+    // Show tooltip on first toggle to Telugu
+    if (newLang === 'te' && !localStorage.getItem('scino-language-tooltip-shown')) {
+      setShowTooltip(true);
+      localStorage.setItem('scino-language-tooltip-shown', 'true');
+      setTimeout(() => setShowTooltip(false), 3000);
+    }
+  };
+
+  // Helper to get translated text
+  const t = (key) => translations[language][key] || translations['en'][key] || key;
 
   // ✅ Session check + persist
   useEffect(() => {
@@ -137,7 +195,7 @@ export default function Navbar() {
                     <button className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium
                                        text-dark-600 dark:text-dark-300 hover:text-dark-900 dark:hover:text-white
                                        hover:bg-dark-100/60 dark:hover:bg-dark-800/60 transition-all duration-200 cursor-pointer">
-                      {link.label}
+                      {t(link.label)}
                       <ChevronDown size={14} className={`transition-transform duration-200 ${activeDropdown === link.label ? 'rotate-180' : ''}`} />
                     </button>
                   ) : (
@@ -148,7 +206,7 @@ export default function Navbar() {
                           : 'text-dark-600 dark:text-dark-300 hover:text-dark-900 dark:hover:text-white hover:bg-dark-100/60 dark:hover:bg-dark-800/60'
                         }`}>
                       {link.icon && <link.icon size={15} />}
-                      {link.label}
+                      {t(link.label)}
                       {isActive(link.href) && (
                         <motion.div
                           className="absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r from-scino-500 to-neon-purple rounded-full"
@@ -176,7 +234,7 @@ export default function Navbar() {
                                             text-scino-500 dark:text-scino-400 group-hover/item:bg-scino-100 transition-colors duration-150">
                               <child.icon size={18} />
                             </div>
-                            <p className="flex-1 text-sm font-semibold text-dark-800 dark:text-dark-100">{child.label}</p>
+                            <p className="flex-1 text-sm font-semibold text-dark-800 dark:text-dark-100">{t(child.label)}</p>
                             {child.badge && (
                               <span className={`text-2xs font-bold px-2 py-0.5 rounded-full
                                 ${child.badge === 'New' ? 'bg-neon-green/10 text-neon-green' : 'bg-scino-50 dark:bg-scino-950/50 text-scino-500'}`}>
@@ -194,6 +252,30 @@ export default function Navbar() {
 
             {/* Right Actions */}
             <div className="flex items-center gap-2.5">
+              {/* Language Toggle */}
+              <div className="relative">
+                <motion.button
+                  onClick={toggleLanguage}
+                  className="flex items-center justify-center w-10 h-10 rounded-xl
+                             bg-dark-100 dark:bg-dark-800 border border-dark-200 dark:border-dark-700
+                             text-dark-600 dark:text-dark-300 hover:bg-dark-200 dark:hover:bg-dark-700
+                             transition-colors duration-200 cursor-pointer"
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Languages size={18} />
+                </motion.button>
+                {showTooltip && (
+                  <motion.div
+                    className="absolute top-full right-0 mt-2 px-3 py-1.5 bg-dark-900 dark:bg-white text-white dark:text-dark-900
+                               text-xs font-medium rounded-lg shadow-lg whitespace-nowrap z-50"
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                  >
+                    Language changed to Telugu!
+                  </motion.div>
+                )}
+              </div>
               <ThemeToggle size="md" />
 
               {/* ✅ Desktop — auth conditional */}
@@ -202,7 +284,7 @@ export default function Navbar() {
                   user ? (
                     <>
                       <Button variant="primary" size="sm" href="/dashboard" icon={LayoutDashboard}>
-                        Dashboard
+                        {t('dashboard')}
                       </Button>
                       <button
                         onClick={handleLogout}
@@ -211,13 +293,13 @@ export default function Navbar() {
                                    hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-200 cursor-pointer"
                       >
                         <LogOut size={15} />
-                        Log out
+                        {t('logout')}
                       </button>
                     </>
                   ) : (
                     <>
-                      <Button variant="ghost" size="sm" href="/login" icon={LogIn}>Log in</Button>
-                      <Button variant="primary" size="sm" href="/signup" icon={Rocket}>Get Started</Button>
+                      <Button variant="ghost" size="sm" href="/login" icon={LogIn}>{t('login')}</Button>
+                      <Button variant="primary" size="sm" href="/signup" icon={Rocket}>{t('getStarted')}</Button>
                     </>
                   )
                 )}
@@ -259,7 +341,7 @@ export default function Navbar() {
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             >
               <div className="flex items-center justify-between px-6 h-16 border-b border-dark-100 dark:border-dark-800">
-                <span className="text-lg font-bold text-dark-900 dark:text-white">Menu</span>
+                <span className="text-lg font-bold text-dark-900 dark:text-white">{t('menu')}</span>
                 <motion.button className="flex items-center justify-center w-10 h-10 rounded-xl
                                           hover:bg-dark-100 dark:hover:bg-dark-800 text-dark-500 transition-colors cursor-pointer"
                   onClick={() => setIsOpen(false)} whileTap={{ scale: 0.9 }}>
@@ -274,7 +356,7 @@ export default function Navbar() {
                       transition={{ delay: index * 0.08, duration: 0.3 }}>
                       {link.children ? (
                         <div className="mb-3">
-                          <p className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-dark-400 dark:text-dark-500">{link.label}</p>
+                          <p className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-dark-400 dark:text-dark-500">{t(link.label)}</p>
                           <div className="space-y-0.5">
                             {link.children.map((child) => (
                               <Link key={child.href} href={child.href}
@@ -282,7 +364,7 @@ export default function Navbar() {
                                            hover:bg-dark-50 dark:hover:bg-dark-800 transition-colors duration-150"
                                 onClick={() => setIsOpen(false)}>
                                 <child.icon size={18} className="text-scino-500" />
-                                <span className="text-sm font-medium">{child.label}</span>
+                                <span className="text-sm font-medium">{t(child.label)}</span>
                                 {child.badge && (
                                   <span className="ml-auto text-2xs font-bold px-2 py-0.5 rounded-full bg-scino-50 text-scino-500">{child.badge}</span>
                                 )}
@@ -296,7 +378,7 @@ export default function Navbar() {
                             ${isActive(link.href) ? 'bg-scino-50 dark:bg-scino-950/30 text-scino-600 dark:text-scino-400' : 'text-dark-700 dark:text-dark-200 hover:bg-dark-50 dark:hover:bg-dark-800'}`}
                           onClick={() => setIsOpen(false)}>
                           {link.icon && <link.icon size={18} />}
-                          {link.label}
+                          {t(link.label)}
                         </Link>
                       )}
                     </motion.div>
@@ -311,19 +393,19 @@ export default function Navbar() {
                   user ? (
                     <>
                       <Button variant="primary" size="lg" fullWidth href="/dashboard" icon={LayoutDashboard}>
-                        Go to Dashboard
+                        {t('goToDashboard')}
                       </Button>
                       <button onClick={handleLogout}
                         className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium
                                    text-red-500 border border-red-200 dark:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors">
                         <LogOut size={18} />
-                        Log Out
+                        {t('logout')}
                       </button>
                     </>
                   ) : (
                     <>
-                      <Button variant="primary" size="lg" fullWidth href="/signup" icon={Rocket}>Get Started — Free</Button>
-                      <Button variant="secondary" size="lg" fullWidth href="/login" icon={LogIn}>Log In</Button>
+                      <Button variant="primary" size="lg" fullWidth href="/signup" icon={Rocket}>{t('getStarted')} — Free</Button>
+                      <Button variant="secondary" size="lg" fullWidth href="/login" icon={LogIn}>{t('login')}</Button>
                     </>
                   )
                 )}

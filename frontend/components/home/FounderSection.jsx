@@ -60,7 +60,13 @@ export default function FounderSection() {
               <motion.div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-scino-500/20 via-neon-purple/15 to-neon-pink/10 blur-2xl" animate={{ opacity: [0.4, 0.7, 0.4], scale: [1, 1.03, 1] }} transition={{ duration: 4, repeat: Infinity }} />
               <div className="relative p-[3px] rounded-3xl bg-gradient-to-br from-scino-500 via-neon-purple to-neon-pink">
                 <div className="rounded-[calc(1.5rem-3px)] overflow-hidden bg-white dark:bg-dark-900">
-                  <motion.img src="/founder.jpg" alt="Venkata Sai Yadav — Founder of SCINO" className="w-full max-w-[380px] aspect-[3/4] object-cover object-top rounded-[calc(1.5rem-3px)]" style={{ y: imageY }} loading="eager" />
+                  {/* TODO: Replace with actual founder photo when available */}
+                  <motion.div 
+                    className="w-full max-w-[380px] aspect-[3/4] bg-gradient-to-br from-scino-500 to-neon-purple flex items-center justify-center rounded-[calc(1.5rem-3px)]"
+                    style={{ y: imageY }}
+                  >
+                    <span className="text-8xl font-bold text-white">VS</span>
+                  </motion.div>
                 </div>
               </div>
               <motion.div className="absolute -top-4 -right-4 sm:-right-8 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white dark:bg-dark-800 border border-dark-200/60 dark:border-dark-700/60 shadow-lg" initial={{ opacity: 0, scale: 0, rotate: -12 }} animate={isInView ? { opacity: 1, scale: 1, rotate: 0 } : {}} transition={{ delay: 0.8, type: 'spring' }} whileHover={{ scale: 1.05 }}>
